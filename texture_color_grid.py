@@ -32,7 +32,7 @@ from neon_colors import NEON_COLORS, get_color_names, get_color
 BLEND_MODE = 'overlay'
 OPACITY = 0.6
 INPUT_BASE_PATH = "orig/assets/minecraft/textures/blocks"
-OUTPUT_BASE_PATH = "."
+OUTPUT_BASE_PATH = "resource-pack/assets/minecraft/textures/blocks"
 
 
 def generate_color_grid(texture_name: str) -> Image.Image:
@@ -111,29 +111,54 @@ def generate_color_grid(texture_name: str) -> Image.Image:
     return grid_image
 
 
-def process_texture_color_grid(texture_name: str, output_path: str = None) -> str:
+def create_mcmeta_file(texture_path: str) -> str:
     """
-    Create a color grid for the specified texture and save it.
+    Create a .mcmeta file for animation alongside the texture.
+    
+    Args:
+        texture_path (str): Path to the texture file
+        
+    Returns:
+        str: Path to the created .mcmeta file
+    """
+    mcmeta_path = f"{texture_path}.mcmeta"
+    mcmeta_content = '{\n  "animation": {}\n}'
+    
+    try:
+        with open(mcmeta_path, 'w') as f:
+            f.write(mcmeta_content)
+        return mcmeta_path
+    except Exception as e:
+        raise IOError(f"Cannot create mcmeta file {mcmeta_path}: {str(e)}")
+
+
+def process_texture_color_grid(texture_name: str, output_path: str = None) -> tuple[str, str]:
+    """
+    Create a color grid for the specified texture and save it with mcmeta file.
     
     Args:
         texture_name (str): Name of the texture (without path or extension)
-        output_path (str, optional): Path to save the grid. If None, auto-generates based on texture name.
+        output_path (str, optional): Path to save the grid. If None, uses resource-pack structure.
         
     Returns:
-        str: Path to the saved grid file
+        tuple[str, str]: Paths to the saved texture file and mcmeta file
     """
-    # Auto-generate output path if not provided
+    # Use resource-pack structure if no output path provided
     if output_path is None:
-        output_filename = f"{texture_name}-color-grid.png"
+        output_filename = f"{texture_name}.png"
         output_path = os.path.join(OUTPUT_BASE_PATH, output_filename)
     
     print("Starting color grid generation...")
     grid_image = generate_color_grid(texture_name)
     
-    print(f"Saving grid to: {output_path}")
+    print(f"Saving texture to: {output_path}")
     save_image(grid_image, output_path)
     
-    return output_path
+    print(f"Creating animation mcmeta file...")
+    mcmeta_path = create_mcmeta_file(output_path)
+    print(f"Saved mcmeta to: {mcmeta_path}")
+    
+    return output_path, mcmeta_path
 
 
 def main():
@@ -145,11 +170,14 @@ def main():
         print("Creates a 1x10 grid (1 column, 10 rows) showing a texture with")
         print("overlay blend mode for each of the 10 predefined neon colors in random order.")
         print()
-        print("Usage: python texture_color_grid.py <texture_name> [output_path]")
+        print("Usage: python texture_color_grid.py <texture_name>")
         print()
         print("Arguments:")
         print("  texture_name        Name of the texture file (without path or .png extension)")
-        print("  output_path         Optional: Path to save the grid (auto-generated if omitted)")
+        print()
+        print("Output:")
+        print("  - Creates texture.png in resource-pack/assets/minecraft/textures/blocks/")
+        print("  - Creates texture.png.mcmeta with animation data")
         print()
         print("Available Colors (randomized each run):")
         for color_name in get_color_names():
@@ -165,18 +193,19 @@ def main():
         print("Examples:")
         print("  python texture_color_grid.py stone")
         print("  python texture_color_grid.py diamond_ore")
-        print("  python texture_color_grid.py cobblestone my_grid.png")
+        print("  python texture_color_grid.py cobblestone")
         print()
-        print("Output file will be created as: texture-color-grid.png (or specified path)")
+        print("Output files will be created in resource-pack structure:")
         sys.exit(1)
     
     texture_name = sys.argv[1]
-    output_path = sys.argv[2] if len(sys.argv) >= 3 else None
     
     try:
-        result_path = process_texture_color_grid(texture_name, output_path)
+        texture_path, mcmeta_path = process_texture_color_grid(texture_name)
         
-        print(f"+ Successfully created color grid: {os.path.basename(result_path)}")
+        print(f"+ Successfully created animated texture:")
+        print(f"  Texture: {os.path.basename(texture_path)}")
+        print(f"  Animation: {os.path.basename(mcmeta_path)}")
         print(f"  Grid shows texture with all {len(NEON_COLORS)} neon colors")
         print(f"  Layout: 1 column x {len(NEON_COLORS)} rows")
         print(f"  Original texture resolution (no scaling)")
