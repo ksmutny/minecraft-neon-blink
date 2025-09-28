@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python3
 """
 Neon Texture Overlay Script
@@ -87,6 +88,27 @@ def apply_neon_glow(image: Image.Image,
     
     return glowed
 
+def mask_overlay_transparent_pixels(base: Image.Image, overlay: Image.Image) -> Image.Image:
+    """
+    Returns a copy of the overlay where fully transparent pixels in the base image are also fully transparent in the overlay.
+    Args:
+        base (Image.Image): The base image (must be RGBA)
+        overlay (Image.Image): The overlay image (must be RGBA)
+    Returns:
+        Image.Image: Masked overlay image
+    """
+    if base.mode != 'RGBA':
+        base = base.convert('RGBA')
+    if overlay.mode != 'RGBA':
+        overlay = overlay.convert('RGBA')
+    base_alpha = base.split()[-1]
+    overlay_data = overlay.getdata()
+    base_alpha_data = base_alpha.getdata()
+    new_overlay_data = [(*rgba[:3], 0) if a == 0 else rgba for rgba, a in zip(overlay_data, base_alpha_data)]
+    masked_overlay = Image.new('RGBA', overlay.size)
+    masked_overlay.putdata(new_overlay_data)
+    return masked_overlay
+
 
 def blend_texture_with_neon(texture: Image.Image,
                            neon_color: Tuple[int, int, int] = (0, 255, 255),
@@ -109,6 +131,8 @@ def blend_texture_with_neon(texture: Image.Image,
     desaturated_texture = enhancer.enhance(0.0)
     # Create neon overlay
     neon_overlay = create_neon_overlay(desaturated_texture.size, neon_color, opacity)
+    # Mask overlay so fully transparent pixels in the base remain transparent in the overlay
+    neon_overlay = mask_overlay_transparent_pixels(desaturated_texture, neon_overlay)
     # Apply blending based on specified mode
     if blend_mode == 'screen':
         # Screen blend for bright neon effect
