@@ -125,14 +125,13 @@ def blend_texture_with_neon(texture: Image.Image,
     return result
 
 
-def save_image(image: Image.Image, output_path: str, quality: int = 95) -> None:
+def save_image(image: Image.Image, output_path: str) -> None:
     """
-    Save the processed image to the specified output path.
+    Save the processed image to the specified output path as PNG.
     
     Args:
         image (Image.Image): Image to save
-        output_path (str): Path where to save the image
-        quality (int): JPEG quality (1-100, default: 95)
+        output_path (str): Path where to save the image (will be saved as PNG)
         
     Raises:
         IOError: If the image cannot be saved
@@ -142,23 +141,13 @@ def save_image(image: Image.Image, output_path: str, quality: int = 95) -> None:
     if output_dir and not os.path.exists(output_dir):
         os.makedirs(output_dir, exist_ok=True)
     
+    # Ensure the output path has .png extension
+    if not output_path.lower().endswith('.png'):
+        output_path = os.path.splitext(output_path)[0] + '.png'
+    
     try:
-        # Determine format based on file extension
-        file_ext = os.path.splitext(output_path)[1].lower()
-        
-        if file_ext in ['.jpg', '.jpeg']:
-            # Convert to RGB for JPEG (no transparency support)
-            rgb_image = Image.new('RGB', image.size, (255, 255, 255))
-            rgb_image.paste(image, mask=image.split()[-1])  # Use alpha as mask
-            rgb_image.save(output_path, 'JPEG', quality=quality)
-        elif file_ext == '.png':
-            # Keep transparency for PNG
-            image.save(output_path, 'PNG')
-        else:
-            # Default to PNG for other extensions
-            output_path = os.path.splitext(output_path)[0] + '.png'
-            image.save(output_path, 'PNG')
-            
+        # Save as PNG with transparency support
+        image.save(output_path, 'PNG')
     except Exception as e:
         raise IOError(f"Cannot save image to {output_path}: {str(e)}")
 
@@ -167,18 +156,16 @@ def process_texture_with_neon(input_path: str,
                              output_path: str,
                              neon_color: Tuple[int, int, int] = (0, 255, 255),
                              opacity: float = 0.3,
-                             blend_mode: str = 'screen',
-                             quality: int = 95) -> None:
+                             blend_mode: str = 'screen') -> None:
     """
     Main function to process a texture with neon overlay effect.
     
     Args:
         input_path (str): Path to input texture file
-        output_path (str): Path to save the processed image
+        output_path (str): Path to save the processed image (will be saved as PNG)
         neon_color (Tuple[int, int, int]): RGB color for neon effect (default: cyan)
         opacity (float): Opacity of neon overlay (0.0 to 1.0)
         blend_mode (str): Blending mode for the effect
-        quality (int): Output quality for JPEG files
     """
     print(f"Loading texture from: {input_path}")
     texture = load_image(input_path)
@@ -187,7 +174,7 @@ def process_texture_with_neon(input_path: str,
     processed_image = blend_texture_with_neon(texture, neon_color, opacity, blend_mode)
     
     print(f"Saving result to: {output_path}")
-    save_image(processed_image, output_path, quality)
+    save_image(processed_image, output_path)
     
     print("✓ Neon texture overlay completed successfully!")
 
@@ -202,11 +189,11 @@ def main():
         print("  --color R,G,B    Neon color as RGB values (default: 0,255,255)")
         print("  --opacity FLOAT  Opacity level 0.0-1.0 (default: 0.3)")
         print("  --blend MODE     Blend mode: screen, overlay, multiply, normal (default: screen)")
-        print("  --quality INT    JPEG quality 1-100 (default: 95)")
         print("\nExamples:")
         print("  python neon_texture_overlay.py input.png output.png")
         print("  python neon_texture_overlay.py input.png output.png --color 255,0,255 --opacity 0.5")
-        print("  python neon_texture_overlay.py input.png output.png --blend overlay --quality 100")
+        print("  python neon_texture_overlay.py input.png output.png --blend overlay")
+        print("\nNote: Output will always be saved as PNG format with transparency support.")
         sys.exit(1)
     
     input_path = sys.argv[1]
@@ -216,7 +203,6 @@ def main():
     neon_color = (0, 255, 255)  # Cyan
     opacity = 0.3
     blend_mode = 'screen'
-    quality = 95
     
     # Parse optional arguments
     i = 3
@@ -246,21 +232,12 @@ def main():
                 print("Error: --blend must be one of: screen, overlay, multiply, normal")
                 sys.exit(1)
             i += 2
-        elif sys.argv[i] == '--quality' and i + 1 < len(sys.argv):
-            try:
-                quality = int(sys.argv[i + 1])
-                if not (1 <= quality <= 100):
-                    raise ValueError()
-            except ValueError:
-                print("Error: --quality must be an integer between 1 and 100")
-                sys.exit(1)
-            i += 2
         else:
             print(f"Unknown option: {sys.argv[i]}")
             sys.exit(1)
     
     try:
-        process_texture_with_neon(input_path, output_path, neon_color, opacity, blend_mode, quality)
+        process_texture_with_neon(input_path, output_path, neon_color, opacity, blend_mode)
     except (FileNotFoundError, IOError, ValueError) as e:
         print(f"Error: {str(e)}")
         sys.exit(1)
