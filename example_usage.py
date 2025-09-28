@@ -13,6 +13,7 @@ from neon_texture_overlay import (
     save_image,
     process_texture_with_neon
 )
+from neon_colors import NEON_COLORS, get_color
 
 
 def example_basic_usage():
@@ -20,8 +21,8 @@ def example_basic_usage():
     input_file = "orig/assets/minecraft/textures/blocks/stone.png"
     output_file = "resource-pack/assets/minecraft/textures/blocks/stone.png"
     
-    # Simple one-liner processing
-    process_texture_with_neon(input_file, output_file)
+    # Simple one-liner processing with default cyan color
+    process_texture_with_neon(input_file, output_file, color_name='cyan')
 
 
 def example_custom_colors():
@@ -32,7 +33,7 @@ def example_custom_colors():
     process_texture_with_neon(
         input_file,
         "resource-pack/assets/minecraft/textures/blocks/diamond_ore_purple.png",
-        neon_color=(255, 0, 255),  # Purple
+        color_name='purple',
         opacity=0.4
     )
     
@@ -40,7 +41,7 @@ def example_custom_colors():
     process_texture_with_neon(
         input_file,
         "resource-pack/assets/minecraft/textures/blocks/diamond_ore_green.png",
-        neon_color=(0, 255, 0),  # Green
+        color_name='green',
         opacity=0.5,
         blend_mode='overlay'
     )
@@ -54,10 +55,11 @@ def example_manual_processing():
     # Load the texture
     texture = load_image(input_file)
     
-    # Apply red neon overlay manually
+    # Apply red neon overlay manually using predefined color
+    red_color = get_color('red')
     neon_texture = blend_texture_with_neon(
         texture,
-        neon_color=(255, 50, 50),  # Red with slight orange tint
+        neon_color=red_color,
         opacity=0.6,
         blend_mode='screen'
     )
@@ -70,16 +72,21 @@ def example_manual_processing():
 def example_batch_processing():
     """Example of processing multiple textures with different effects."""
     
-    # Define textures and their neon colors
+    # Define textures and their neon colors using predefined color names
     texture_configs = [
-        ("stone.png", (100, 200, 255), 0.3),     # Light blue
-        ("dirt.png", (139, 69, 19), 0.25),       # Brown glow
-        ("grass_side.png", (50, 255, 50), 0.4),  # Green
-        ("sand.png", (255, 255, 100), 0.3),      # Yellow
-        ("cobblestone.png", (150, 150, 255), 0.35) # Light purple
+        ("stone.png", "blue", 0.3),
+        ("dirt.png", "orange", 0.25),
+        ("grass_side.png", "lime", 0.4),
+        ("sand.png", "yellow", 0.3),
+        ("cobblestone.png", "purple", 0.35),
+        ("diamond_ore.png", "cyan", 0.4),
+        ("redstone_ore.png", "red", 0.5),
+        ("gold_ore.png", "yellow", 0.45),
+        ("iron_ore.png", "blue", 0.3),
+        ("coal_ore.png", "magenta", 0.35)
     ]
     
-    for texture_name, color, opacity in texture_configs:
+    for texture_name, color_name, opacity in texture_configs:
         input_path = f"orig/assets/minecraft/textures/blocks/{texture_name}"
         output_path = f"resource-pack/assets/minecraft/textures/blocks/{texture_name}"
         
@@ -87,11 +94,11 @@ def example_batch_processing():
             process_texture_with_neon(
                 input_path,
                 output_path,
-                neon_color=color,
+                color_name=color_name,
                 opacity=opacity,
                 blend_mode='screen'
             )
-            print(f"✓ Processed {texture_name}")
+            print(f"✓ Processed {texture_name} with {color_name} neon")
         except (FileNotFoundError, IOError) as e:
             print(f"✗ Skipped {texture_name}: {e}")
 

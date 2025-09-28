@@ -12,6 +12,7 @@ import os
 import sys
 from typing import Tuple, Optional
 from PIL import Image, ImageEnhance
+from neon_colors import NEON_COLORS, DEFAULT_COLOR, get_color, list_colors, get_color_names
 
 
 def load_image(input_path: str) -> Image.Image:
@@ -154,7 +155,8 @@ def save_image(image: Image.Image, output_path: str) -> None:
 
 def process_texture_with_neon(input_path: str,
                              output_path: str,
-                             neon_color: Tuple[int, int, int] = (0, 255, 255),
+                             neon_color: Tuple[int, int, int] = None,
+                             color_name: str = None,
                              opacity: float = 0.3,
                              blend_mode: str = 'screen') -> None:
     """
@@ -163,15 +165,23 @@ def process_texture_with_neon(input_path: str,
     Args:
         input_path (str): Path to input texture file
         output_path (str): Path to save the processed image (will be saved as PNG)
-        neon_color (Tuple[int, int, int]): RGB color for neon effect (default: cyan)
+        neon_color (Tuple[int, int, int]): RGB color for neon effect (deprecated, use color_name)
+        color_name (str): Name of predefined neon color (default: 'cyan')
         opacity (float): Opacity of neon overlay (0.0 to 1.0)
         blend_mode (str): Blending mode for the effect
     """
+    # Handle color selection - prefer color_name over neon_color
+    if color_name is not None:
+        final_color = get_color(color_name)
+    elif neon_color is not None:
+        final_color = neon_color
+    else:
+        final_color = get_color(DEFAULT_COLOR)
     print(f"Loading texture from: {input_path}")
     texture = load_image(input_path)
     
-    print(f"Applying neon overlay (color: {neon_color}, opacity: {opacity}, mode: {blend_mode})")
-    processed_image = blend_texture_with_neon(texture, neon_color, opacity, blend_mode)
+    print(f"Applying neon overlay (color: {final_color}, opacity: {opacity}, mode: {blend_mode})")
+    processed_image = blend_texture_with_neon(texture, final_color, opacity, blend_mode)
     
     print(f"Saving result to: {output_path}")
     save_image(processed_image, output_path)
@@ -186,13 +196,16 @@ def main():
     if len(sys.argv) < 3:
         print("Usage: python neon_texture_overlay.py <input_path> <output_path> [options]")
         print("\nOptions:")
-        print("  --color R,G,B    Neon color as RGB values (default: 0,255,255)")
+        print(f"  --color NAME     Neon color name (default: {DEFAULT_COLOR})")
         print("  --opacity FLOAT  Opacity level 0.0-1.0 (default: 0.3)")
         print("  --blend MODE     Blend mode: screen, overlay, multiply, normal (default: screen)")
+        print("  --list-colors    Show all available neon colors and exit")
+        print("\nAvailable Colors:")
+        print(list_colors())
         print("\nExamples:")
         print("  python neon_texture_overlay.py input.png output.png")
-        print("  python neon_texture_overlay.py input.png output.png --color 255,0,255 --opacity 0.5")
-        print("  python neon_texture_overlay.py input.png output.png --blend overlay")
+        print("  python neon_texture_overlay.py input.png output.png --color purple --opacity 0.5")
+        print("  python neon_texture_overlay.py input.png output.png --color red --blend overlay")
         print("\nNote: Output will always be saved as PNG format with transparency support.")
         sys.exit(1)
     
@@ -200,21 +213,22 @@ def main():
     output_path = sys.argv[2]
     
     # Default values
-    neon_color = (0, 255, 255)  # Cyan
+    color_name = DEFAULT_COLOR
     opacity = 0.3
     blend_mode = 'screen'
     
     # Parse optional arguments
     i = 3
     while i < len(sys.argv):
-        if sys.argv[i] == '--color' and i + 1 < len(sys.argv):
-            try:
-                color_str = sys.argv[i + 1]
-                neon_color = tuple(map(int, color_str.split(',')))
-                if len(neon_color) != 3:
-                    raise ValueError()
-            except ValueError:
-                print("Error: --color must be in format R,G,B (e.g., 255,0,255)")
+        if sys.argv[i] == '--list-colors':
+            print("Available Neon Colors:")
+            print(list_colors())
+            sys.exit(0)
+        elif sys.argv[i] == '--color' and i + 1 < len(sys.argv):
+            color_name = sys.argv[i + 1].lower()
+            if color_name not in get_color_names():
+                available = ', '.join(get_color_names())
+                print(f"Error: Unknown color '{color_name}'. Available colors: {available}")
                 sys.exit(1)
             i += 2
         elif sys.argv[i] == '--opacity' and i + 1 < len(sys.argv):
@@ -237,7 +251,7 @@ def main():
             sys.exit(1)
     
     try:
-        process_texture_with_neon(input_path, output_path, neon_color, opacity, blend_mode)
+        process_texture_with_neon(input_path, output_path, color_name=color_name, opacity=opacity, blend_mode=blend_mode)
     except (FileNotFoundError, IOError, ValueError) as e:
         print(f"Error: {str(e)}")
         sys.exit(1)
