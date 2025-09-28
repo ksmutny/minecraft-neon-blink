@@ -104,25 +104,25 @@ def blend_texture_with_neon(texture: Image.Image,
     Returns:
         Image.Image: Blended image with neon effect
     """
+    # Reduce saturation to make the image nearly black and white, but retain alpha channel
+    enhancer = ImageEnhance.Color(texture)
+    desaturated_texture = enhancer.enhance(0.0)
     # Create neon overlay
-    neon_overlay = create_neon_overlay(texture.size, neon_color, opacity)
-    
+    neon_overlay = create_neon_overlay(desaturated_texture.size, neon_color, opacity)
     # Apply blending based on specified mode
     if blend_mode == 'screen':
         # Screen blend for bright neon effect
-        result = Image.blend(texture, neon_overlay, opacity)
+        result = Image.blend(desaturated_texture, neon_overlay, opacity)
     elif blend_mode == 'overlay':
         # Overlay blend for more dramatic effect
-        result = Image.alpha_composite(texture, neon_overlay)
+        result = Image.alpha_composite(desaturated_texture, neon_overlay)
     elif blend_mode == 'multiply':
         # Multiply for darker neon effect
-        result = Image.blend(texture, neon_overlay, opacity * 0.5)
+        result = Image.blend(desaturated_texture, neon_overlay, opacity * 0.5)
     else:  # normal blend
-        result = Image.alpha_composite(texture, neon_overlay)
-    
+        result = Image.alpha_composite(desaturated_texture, neon_overlay)
     # Apply glow effect
     result = apply_neon_glow(result, neon_color)
-    
     return result
 
 
