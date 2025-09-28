@@ -18,6 +18,7 @@ Author: Karel Smutny, scrumdojo.cz
 
 import os
 import sys
+import random
 from typing import List, Tuple
 from PIL import Image
 from neon_texture_overlay import (
@@ -53,7 +54,7 @@ def generate_color_grid(texture_name: str) -> Image.Image:
     
     print(f"Loading texture: {texture_name}")
     print(f"Creating 1x10 grid with overlay blend mode at {OPACITY} opacity")
-    print(f"Colors: {', '.join(get_color_names())}")
+    print(f"Using all {len(NEON_COLORS)} colors in random order")
     
     # Load the base texture
     base_texture = load_image(input_path)
@@ -77,9 +78,14 @@ def generate_color_grid(texture_name: str) -> Image.Image:
     print(f"Cell size: {cell_width}x{cell_height} pixels")
     print(f"Output size: {total_width}x{total_height} pixels")
     
-    # Generate grid cells - one for each color
+    # Generate grid cells - one for each color in random order
     color_names = get_color_names()
-    for row, color_name in enumerate(color_names):
+    random_color_names = color_names.copy()
+    random.shuffle(random_color_names)
+    
+    print(f"Random color order: {', '.join(random_color_names)}")
+    
+    for row, color_name in enumerate(random_color_names):
         print(f"  Processing {color_name} overlay...")
         
         try:
@@ -137,7 +143,7 @@ def main():
         print("=" * 50)
         print()
         print("Creates a 1x10 grid (1 column, 10 rows) showing a texture with")
-        print("overlay blend mode at 0.7 opacity for each of the 10 predefined neon colors.")
+        print("overlay blend mode for each of the 10 predefined neon colors in random order.")
         print()
         print("Usage: python texture_color_grid.py <texture_name> [output_path]")
         print()
@@ -145,10 +151,10 @@ def main():
         print("  texture_name        Name of the texture file (without path or .png extension)")
         print("  output_path         Optional: Path to save the grid (auto-generated if omitted)")
         print()
-        print("Available Colors (in order from top to bottom):")
-        for i, color_name in enumerate(get_color_names(), 1):
+        print("Available Colors (randomized each run):")
+        for color_name in get_color_names():
             rgb = get_color(color_name)
-            print(f"  {i:2d}. {color_name:<8} - RGB{rgb}")
+            print(f"  - {color_name:<8} - RGB{rgb}")
         print()
         print("Configuration:")
         print(f"  - Blend mode: {BLEND_MODE}")
