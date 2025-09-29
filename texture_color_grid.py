@@ -34,10 +34,35 @@ OPACITY = 0.6
 INPUT_BASE_PATH = "orig/assets/minecraft/textures/blocks"
 OUTPUT_BASE_PATH = "resource-pack/assets/minecraft/textures/blocks"
 
+BLOCK_GROUPS = [
+    "log_oak", "log_spruce", "log_birch", "log_jungle", "log_acacia", "log_big_oak",
+    "quartz_block_lines", "hay_block_side", "tnt", "bed", 
+    "door_wood", "door_spruce", "door_birch", "door_jungle", "door_acacia", "door_dark_oak",
+    "door_iron", "piston", "anvil", "brewing_stand", "enchanting_table",
+    "cauldron", "crafting_table", "furnace", "dispenser", "dropper",
+    "jukebox", "grass", "mycelium", "podzol", "pumpkin", "melon"
+]
+
+def get_texture_prefix(texture_name: str) -> str:
+    """
+    Get the prefix of a texture name for consistent color ordering.
+    
+    Args:
+        texture_name (str): Name of the texture
+        
+    Returns:
+        str: Prefix of the texture name or the full name if no prefix found
+    """
+    # Find matching prefix from BLOCK_GROUPS
+    for group in BLOCK_GROUPS:
+        if group.startswith(texture_name.split('_')[0]):
+            return group.split('_')[0]
+    return texture_name
 
 def generate_color_grid(texture_name: str) -> Image.Image:
     """
     Generate a 1x10 grid showing the texture with each neon color overlay.
+    Textures with same prefix will have identical color sequence.
     
     Args:
         texture_name (str): Name of the texture file (without path or extension)
@@ -78,12 +103,19 @@ def generate_color_grid(texture_name: str) -> Image.Image:
     print(f"Cell size: {cell_width}x{cell_height} pixels")
     print(f"Output size: {total_width}x{total_height} pixels")
     
-    # Generate grid cells - one for each color in random order
+    # Get prefix and use it as seed for consistent ordering
+    prefix = get_texture_prefix(texture_name)
+    random.seed(prefix)
+    
+    # Generate grid cells - one for each color with prefix-based ordering
     color_names = get_color_names()
     random_color_names = color_names.copy()
     random.shuffle(random_color_names)
     
-    print(f"Random color order: {', '.join(random_color_names)}")
+    # Reset the random seed to not affect other random operations
+    random.seed()
+    
+    print(f"Color order for prefix '{prefix}': {', '.join(random_color_names)}")
     
     for row, color_name in enumerate(random_color_names):
         print(f"  Processing {color_name} overlay...")
